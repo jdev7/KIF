@@ -467,7 +467,7 @@ static BOOL KIFUITestActorAnimationsEnabled = YES;
     }];
 
     // Wait for view to settle.
-    [self waitForTimeInterval:0.5 relativeToAnimationSpeed:YES];
+    [self waitForAnimationsToFinish];
 }
 
 - (void)waitForKeyboard
@@ -1335,7 +1335,8 @@ static BOOL KIFUITestActorAnimationsEnabled = YES;
     // Can handle only the touchable space.
     CGRect elementFrame = [viewToSwipe convertRect:viewToSwipe.bounds toView:[UIApplication sharedApplication].keyWindow.rootViewController.view];
     CGPoint swipeStart = CGPointCenteredInRect(elementFrame);
-    CGPoint swipeDisplacement = CGPointMake(CGRectGetMidX(elementFrame), CGRectGetMaxY(elementFrame));
+    swipeStart.y = swipeStart.y - CGRectGetMaxY(elementFrame) / 4.0;
+    CGPoint swipeDisplacement = CGPointMake(0, CGRectGetMaxY(elementFrame) / 2.0);
 
     [viewToSwipe dragFromPoint:swipeStart displacement:swipeDisplacement steps:kNumberOfPointsInSwipePath];
 }
@@ -1672,6 +1673,14 @@ static BOOL KIFUITestActorAnimationsEnabled = YES;
 
 - (CGPoint) tappablePointInElement:(UIAccessibilityElement *)element andView:(UIView *)view
 {
+    // AccessibilityActivationPoint indicates where on the element assistive technologies should issue a tap event to activate the element.
+    // In the case where the property has not been explicitly set. The default value is the midpoint of the accessibility frame.
+    UIView *hitView = [view.window hitTest:element.accessibilityActivationPoint withEvent:nil];
+    if ([view isTappableWithHitTestResultView:hitView]) {
+        return [view.window convertPoint:element.accessibilityActivationPoint toView:view];
+    }
+    
+    // If the element's AccessibilityActivationPoint is not tappable, attempt to find a suitable tappable point within the element's frame.
     CGRect elementFrame = [self elementFrameForElement:element andView:view];
     CGPoint tappablePoint = [view tappablePointInRect:elementFrame];
 
